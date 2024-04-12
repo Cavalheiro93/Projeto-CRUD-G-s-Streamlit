@@ -80,6 +80,5 @@ with col1:
         db.RegisterValues(ListaRegistroEstoque)
         st.success('Cadastrado com sucesso')
 
-
 with col2:
     pass                

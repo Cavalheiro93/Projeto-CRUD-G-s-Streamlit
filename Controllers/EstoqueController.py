@@ -113,3 +113,30 @@ class Data_base:
             return cursor.fetchall()
         except:
             pass
+
+    
+    def QueryChangeDelete(self):
+        self.start_connection()
+
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM FactEstoque")
+
+        ProductList = []
+
+        for row in cursor.fetchall():
+            ProductList.append(
+                Estoque.Estoque(
+                    row[0],         # id
+                    row[1],         # datahora
+                    row[2],         # usuario
+                    row[3],         # produto
+                    row[4],         # fornecedor
+                    row[5],         # modelo
+                    row[6],         # quantidade
+                    row[7],         # entrada_saida
+                    row[8]          # tipo_saida
+                )
+            )
+
+        return ProductList
+

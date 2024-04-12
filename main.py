@@ -1,33 +1,18 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 from st_pages import Page, show_pages, add_page_title, Section
+import pandas as pd
 
-st.set_page_config(layout="wide")
+# Define function to authenticate user
+def authenticate_user(names, usernames, hashed_passwords, kind_access):
+    with st.sidebar:
+        authenticator = stauth.Authenticate(names, usernames, hashed_passwords,
+                                            'some_cookie_name', 'some_signature_key', cookie_expiry_days=0)
+        name, authentication_status, username = authenticator.login('Usuario', 'main')
+        return name, authentication_status, username
 
-# Definindo as páginas
-pages = [
-    Page("main.py", "Bem Vindo", "🏠"),            
-    Page("Pages/Incluir.py", "Incluir", "➕️"),
-    Page("Pages/Consultar.py", "Consultar", "🔍️",),
-    Page("Pages/Resumo.py", "Resumo", "📊️"),
-]
-
-show_pages([pages[0]])  # Mostrar apenas as páginas de Login e Pagina Inicial
-
-# Definindo as credenciais
-names = ['John Smith', 'Rebecca Briggs', 'Caio Cavalheiro', 'Nayara Cavalheiro']
-usernames = ['jsmith', 'rbriggs', 'ccavalheiro', 'ncavalheiro']
-passwords = ['123', '456', '110593', '210993']
-
-# Gerar senhas criptografadas apenas uma vez
-hashed_passwords = stauth.Hasher(passwords).generate()
-
-# Autenticação do usuário
-with st.sidebar:
-    authenticator = stauth.Authenticate(names, usernames, hashed_passwords,
-                                        'some_cookie_name', 'some_signature_key', cookie_expiry_days=30)
-    name, authentication_status, username = authenticator.login('Usuario', 'main')
-
+# Define function to display pages based on user access
+def display_pages(pages, authentication_status, username, name):
     if authentication_status:
         # Botão de logout
         authenticator.logout('Logout', 'main')  # Realizar logout
@@ -42,16 +27,15 @@ with st.sidebar:
         with open('usuario_logado.txt', 'w') as f:
             f.write(name)
         
-        # Mostrar páginas de acordo com a autenticação
-        if username == 'jsmith':
-            show_pages(pages)  # Mostrar todas as páginas
-        elif username == 'rbriggs':
-            show_pages([pages[0], pages[2]])  # Mostrar apenas as páginas de Login e Pagina Inicial
-        elif username == 'ccavalheiro':
-            show_pages([pages[0], pages[1], pages[2], pages[3]])  # Mostrar apenas as páginas de Login e Pagina Inicial
-        elif username == 'ncavalheiro':
-            st.error('Você não tem permissão para acessar esta página')
-            show_pages([pages[0], pages[1], pages[2]])  # Mostrar apenas as páginas de Login e Pagina Inicial        
+        #combine o usuario autenticado com o tipo de acesso e entao as paginas serao mostradas de acordo com o tipo de acesso
+        user_access = dict(zip(usernames, kind_access))                         #gerando um dicionario com os usuarios e seus respectivos acessos
+        user_access = {k: v for k, v in user_access.items() if k == username}   #filtrando o dicionario para pegar apenas o usuario autenticado
+        user_access = list(user_access.values())[0]                             #pegando o valor do tipo de acesso do usuario autenticado
+
+        if user_access == 'admin':
+            show_pages(pages)
+        elif user_access == 'regular':
+            show_pages([pages[0], pages[1]])
         else:
             st.error('Você não tem permissão para acessar esta página')
             show_pages([pages[0], pages[1]])  # Mostrar apenas as páginas de Login e Pagina Inicial
@@ -61,7 +45,34 @@ with st.sidebar:
     elif authentication_status is None:
         st.warning('Please enter your username and password')
 
-if authentication_status:
-    st.title(f'Bem vindo ao Sistema de Controle de Estoque {my_session}')
-else:
-    st.title('Você não está logado, Clique em Bem Vindo para logar')
+# Main function
+def main():
+    # Definindo as páginas
+    pages = [
+        Page("main.py", "Bem Vindo", "🏠"),            
+        Page("Pages/Incluir.py", "Incluir", "➕️"),
+        Page("Pages/Consultar.py", "Consultar", "🔍️",),
+        Page("Pages/Resumo.py", "Resumo", "📊️"),
+        Page("Pages/AlterarExcluir.py", "Alterar e Excluir", "🔄️"),
+    ]
+
+    show_pages([pages[0]])  # Mostrar apenas as páginas de Login e Pagina Inicial
+
+    # Definindo as credenciais
+    df_users = pd.read_csv('myusers.csv', sep=';')
+    names = df_users['name'].tolist()
+    usernames = df_users['username'].tolist()
+    passwords = df_users['password'].astype(str).tolist()
+    kind_access = df_users['kind of access'].tolist()
+
+    # Gerar senhas criptografadas apenas uma vez
+    hashed_passwords = stauth.Hasher(passwords).generate()
+    
+    # Authenticate user
+    name, authentication_status, username = authenticate_user(names, usernames, hashed_passwords, kind_access)
+
+    # Display pages based on authentication
+    display_pages(pages, authentication_status, username, name)
+
+if __name__ == "__main__":
+    main()
