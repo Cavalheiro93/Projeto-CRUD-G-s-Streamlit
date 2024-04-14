@@ -140,3 +140,23 @@ class Data_base:
 
         return ProductList
 
+
+    def DeleteValues(self, idExcluido):
+        self.start_connection()
+        cursor = self.connection.cursor()
+        cursor.execute("DELETE FROM FactEstoque WHERE id = ?", (idExcluido,))
+        self.connection.commit()
+
+    def SelectID(self, idSelecionado):
+        self.start_connection()
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM FactEstoque WHERE id = ?", (idSelecionado,))
+
+        row = cursor.fetchone()
+        return row
+    
+    def UpdateValues(self, fullDataSet):
+        self.start_connection()
+        cursor = self.connection.cursor()
+        cursor.execute("UPDATE FactEstoque SET DataHora = ?, Usuário = ?, Produto = ?, Fornecedor = ?, Modelo = ?, Quantidade = ?, Entrada_Saida = ?, TipoSaida = ? WHERE id = ?", fullDataSet)
+        self.connection.commit()

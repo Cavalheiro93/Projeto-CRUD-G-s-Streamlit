@@ -48,6 +48,13 @@ def authenticate_and_display_pages():
             user_access = dict(zip(usernames, kind_access))
             user_access = user_access.get(username)
 
+            st.session_state["AcessoUsuario"] = user_access
+
+            #gerar um arquivo txt com o nome do usuario logado
+            with open('usuario_logado.txt', 'w') as f:
+                f.write(name + '\n')
+                f.write(user_access)
+
             if user_access == 'admin':
                 show_pages(pages)
             elif user_access == 'regular':

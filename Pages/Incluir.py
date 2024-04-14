@@ -6,12 +6,14 @@ import models.Estoque as estoque
 st.set_page_config(layout="centered")
 
 username = st.session_state.get('NomeUsuario', '')
-if username == '':
-    # st.error('Você não está logado, Clique em Bem Vindo para logar')
-    # st.stop()
-    #ler o arquivo usuario_logado.txt
+kind_access = st.session_state.get('AcessoUsuario', '')
+
+
+if kind_access == '':
     with open('usuario_logado.txt', 'r') as f:
-        username = f.read()
+        lines = f.readlines()
+        username = lines[0].strip()  # Get the first line
+        kind_access = lines[1].strip()  # Get the second line
 
 
 db = EstoqueController.Data_base('system.db')
@@ -47,8 +49,17 @@ with col1:
         input_modelo = st.selectbox('Modelo', options=['P05', 'P13', 'P20', 'P45'])
 
     input_quantidade = st.number_input('Quantidade', 0)
-    input_entrada_saida = st.selectbox('Entrada/Saída', options=['Entrada', 'Saída'])
-    input_tipo_saida = st.selectbox('Tipo de Saída', options=['Revenda', 'Vale', 'Troca'])
+
+   #Só o admin pode cadastrar Entrada e Saída, para os demais usuários só é permitido dar saida no estoque
+    if kind_access == 'admin':
+        input_entrada_saida = st.selectbox('Entrada/Saída', options=['Entrada', 'Saída'])
+    else:
+        input_entrada_saida = st.selectbox('Entrada/Saída', options=['Saída'])
+
+    if input_entrada_saida == 'Entrada':
+        input_tipo_saida = st.selectbox('Tipo de Saída', options=['Entrada de Estoque'])
+    else:
+        input_tipo_saida = st.selectbox('Tipo de Saída', options=['Revenda', 'Vale', 'Troca'])
 
 
     if st.button('Cadastrar'):
@@ -80,5 +91,17 @@ with col1:
         db.RegisterValues(ListaRegistroEstoque)
         st.success('Cadastrado com sucesso')
 
+        if RegistroEstoque.tipo_saida == 'Troca':
+            ListaRegistroEstoque = (
+            RegistroEstoque.datahora, 
+            RegistroEstoque.usuario, 
+            RegistroEstoque.produto, 
+            RegistroEstoque.fornecedor, 
+            RegistroEstoque.modelo, 
+            RegistroEstoque.qtd, 
+            "Entrada", 
+            RegistroEstoque.tipo_saida
+                                )
+            db.RegisterValues(ListaRegistroEstoque)
 with col2:
     pass                
